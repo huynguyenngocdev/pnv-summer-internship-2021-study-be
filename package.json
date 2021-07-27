@@ -1,0 +1,28 @@
+{
+  "name": "pnv-summer-internship-2021-study-be",
+  "version": "1.0.0",
+  "description": "API for the project of PNV's students at CES.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon main.js",
+    "start": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/codeengine-interns/pnv-summer-internship-2021-study-be.git"
+  },
+  "keywords": [
+    "API"
+  ],
+  "author": "Nguyen Ngoc Huy, Nguyen Dinh Long",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/codeengine-interns/pnv-summer-internship-2021-study-be/issues"
+  },
+  "homepage": "https://gitlab.com/codeengine-interns/pnv-summer-internship-2021-study-be#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.12"
+  }
+}
