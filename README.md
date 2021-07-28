@@ -41,10 +41,20 @@ At your directory root, run:
 npm/yarn install
 ```
 
-### Run server
+### Run server normal
 
 ```
 npm/yarn start
+```
+### Run server with debug
+
+```
+DEBUG=pnv-summer-internship-2021-study-be:* npm start
+```
+### Run server with nodemon
+
+```
+npm/yarn run dev
 ```
 
 Open on web: http://localhost:3000 (this is by default, you can custom it)
