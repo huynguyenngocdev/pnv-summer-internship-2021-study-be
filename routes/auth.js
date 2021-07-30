@@ -12,7 +12,6 @@ router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Validate user input
     if (!(email && password && name)) {
       return res.status(HTTPStatus.BAD_REQUEST).send({
         message: "All input is required. Please input name, email, password",
@@ -42,7 +41,6 @@ router.post("/register", async (req, res) => {
 
     user.token = token;
 
-    // return new user
     return res.status(HTTPStatus.CREATED).json(user);
   } catch (err) {
     console.log(err);
@@ -53,7 +51,6 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate user input
     if (!(email && password)) {
       res.status(HTTPStatus.BAD_REQUEST).send("All input is required");
     }

@@ -9,15 +9,13 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const HTTPStatus = require("http-status");
 
-//require router
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
-// authorization router
+
 const authRouter = require("./routes/auth");
 
 const app = express();
 
-// parse various different custom JSON types as JSON
 app.use(bodyParser.json({ type: "application/*+json" }));
 
 // view engine setup
