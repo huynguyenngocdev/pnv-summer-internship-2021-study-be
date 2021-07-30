@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const HTTPStatus = require("http-status");
 
 //require router
 const indexRouter = require("./routes/index");
@@ -37,11 +38,11 @@ app.use("/auth", authRouter);
 app.use("/api/users", usersRouter);
 
 app.use("*", (req, res) => {
-  res.status(404).json({
+  res.status(HTTPStatus.NOT_FOUND).json({
     success: "false",
     message: "Page not found",
     error: {
-      statusCode: 404,
+      statusCode: HTTPStatus.NOT_FOUND,
       message: "You reached a route that is not defined on this server",
     },
   });
@@ -49,17 +50,15 @@ app.use("*", (req, res) => {
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  next(createError(HTTPStatus.NOT_FOUND));
 });
 
 // error handler
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
+  res.status(err.status || HTTPStatus.INTERNAL_SERVER_ERROR);
   res.render("error");
 });
 

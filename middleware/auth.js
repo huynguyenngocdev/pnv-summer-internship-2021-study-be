@@ -1,21 +1,26 @@
+const HTTPStatus = require("http-status");
 const jwt = require("jsonwebtoken");
 
-const config = process.env;
+const { TOKEN_KEY } = process.env;
 
 const verifyToken = (req, res, next) => {
-  const token =
-    req.headers.authorization && req.headers.authorization.split(" ")[1];
+  const {
+    headers: { authorization },
+  } = req;
+  const token = authorization && authorization.split(" ").pop();
 
   if (!token) {
     return res
-      .status(403)
-      .send({ message: "A token is required for authentication" });
+      .status(HTTPStatus.UNAUTHORIZED)
+      .json({ message: "A token is required for authentication" });
   }
   try {
-    const decoded = jwt.verify(token, config.TOKEN_KEY);
+    const decoded = jwt.verify(token, TOKEN_KEY);
     req.user = decoded;
   } catch (err) {
-    return res.status(401).send({ message: "Invalid Token" });
+    return res
+      .status(HTTPStatus.UNAUTHORIZED)
+      .json({ message: "Invalid Token" });
   }
   return next();
 };
