@@ -1,24 +1,52 @@
 {
   "name": "pnv-summer-internship-2021-study-be",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Server for the project of PNV's student at CES.",
+  "apidoc": {
+    "name": "Guide to use APIs for the project",
+    "title": "Guide to use APIs",
+    "version": "0.1.0",
+    "description": "Server for the project of Passerelles numériques Vietnam's students at Code Engine Studio.",
+    "sampleUrl": "https://pnv-ces-classwork.herokuapp.com",
+    "url": "https://pnv-ces-classwork.herokuapp.com",
+    "defaultVersion": "0.1.0",
+    "apidoc": "0.3.0",
+    "generator": {
+      "name": "apidoc",
+      "time": "2021",
+      "url": "https://apidocjs.com",
+      "version": "0.29.0"
+    }
+  },
   "private": true,
+  "main": "./bin/www",
   "scripts": {
-    "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www"
+    "start": "apidoc -i ./ -e node_modules -o ./docs && node --experimental-modules ./bin/www.mjs",
+    "dev": "apidoc -i ./ -e node_modules -o ./docs && nodemon --experimental-modules ./bin/www.mjs",
+    "docs": "apidoc -i ./ -e node_modules -o ./docs"
   },
   "dependencies": {
+    "apidoc": "^0.29.0",
     "bcryptjs": "^2.4.3",
-    "body-parser": "^1.18.3",
     "cookie-parser": "~1.4.4",
+    "cookie-session": "^1.4.0",
+    "cors": "^2.8.5",
     "debug": "~2.6.9",
     "dotenv": "^10.0.0",
     "express": "~4.16.1",
+    "express-list-routes": "^1.1.3",
     "http-errors": "~1.6.3",
     "http-status": "^1.5.0",
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.13.3",
     "morgan": "~1.9.1",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.12",
+    "passport": "^0.4.1",
+    "passport-google-oauth": "^2.0.0"
+  },
+  "devDependencies": {
+    "grunt-apidoc": "^0.11.0"
   }
 }

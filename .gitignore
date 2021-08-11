@@ -122,5 +122,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+#exclude docs, apidoc is only create when server start
+docs
+docs/
+
 # End of https://www.toptal.com/developers/gitignore/api/node
 {"mode":"full","isActive":false}
