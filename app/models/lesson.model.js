@@ -11,7 +11,10 @@ const schema = mongoose.Schema(
     },
     star: {
       type: String,
-      default: 0,
+      default: 1,
+    },
+    onwerId: {
+      type: String,
     },
   },
   { timestamps: true }

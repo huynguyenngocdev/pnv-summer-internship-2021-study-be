@@ -4,22 +4,19 @@ const Log = db.logs;
 // const Class = db.classes;
 //create
 const create = async (req, res) => {
-  const { classId, action, byUserId, userName } = req.params;
+  const { classroomId, action, byUserId, userName } = req.body;
   try {
-    // const findClass= classes.findById(classId)
-    // find class before insert
-    //maybe need auth in here
     const log = await Log.create({
       action,
       byUserId,
       userName,
-      classId,
+      classroomId,
       log: `${action} by ${userName}  at  ${new Date().toLocaleString()}`,
     });
     return res.send(log);
   } catch (error) {
     res.status(HTTPStatus.NOT_FOUND).send({
-      message: error.message || `Maybe class ${classId} not found or`,
+      message: error.message || `Maybe class ${classroomId} not found or`,
     });
   }
 };
@@ -70,4 +67,5 @@ const findOne = async (req, res) => {
       .send({ message: `Error retrieving user with id= ${id}` });
   }
 };
+
 export { create, findAll, findOne };

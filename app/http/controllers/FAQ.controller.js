@@ -3,14 +3,17 @@ import HTTPStatus from 'http-status';
 
 const FAQ = db.FAQs;
 const FAQAnswer = db.FAQAnswers;
-//create FAQ
+const User = db.users;
 const create = async (req, res) => {
   const { question, answer } = req.body;
-
+  const { user_id } = req.user;
   try {
+    const user = await User.findById(user_id);
     const faq = await FAQ.create({
       question,
       answer,
+      ownerId: user_id,
+      ownerName: user.name,
     });
     return res.status(HTTPStatus.OK).send(faq);
   } catch (error) {
@@ -39,23 +42,23 @@ const findAll = async (req, res) => {
 
 // find a single FQA with an id
 const findOne = async (req, res) => {
-  const { id } = req.params;
+  const { faqId } = req.params;
   try {
-    const faq = await FAQ.findById(id);
+    const faq = await FAQ.findById(faqId);
     if (faq) return res.send(faq);
 
     return res
       .status(HTTPStatus.NOT_FOUND)
-      .send({ message: `Not found FAQ with id ${id}` });
+      .send({ message: `Not found FAQ with id ${faqId}` });
   } catch (error) {
     return res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-      .send({ message: `Error retrieving FAQ with id=  ${id}` });
+      .send({ message: `Error retrieving FAQ with id=  ${faqId}` });
   }
 };
 
 const update = async (req, res) => {
-  const { id } = req.params;
+  const { faqId } = req.params;
 
   if (!req.body) {
     return res.status(HTTPStatus.BAD_REQUEST).send({
@@ -63,25 +66,25 @@ const update = async (req, res) => {
     });
   }
   try {
-    const faq = await FAQ.findByIdAndUpdate(id, req.body, {
+    const faq = await FAQ.findByIdAndUpdate(faqId, req.body, {
       useFindAndModify: false,
     });
     if (faq) return res.send({ message: 'FAQ was updated successfully.' });
 
     return req.status(HTTPStatus.NOT_FOUND).send({
-      message: `Cannot update FAQ with id=${id}. Maybe FAQ was not found!`,
+      message: `Cannot update FAQ with id=${faqId}. Maybe FAQ was not found!`,
     });
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
-      message: `Error updating FAQ with id=${id}`,
+      message: `Error updating FAQ with id=${faqId}`,
     });
   }
 };
 
 const deleteOne = async (req, res) => {
-  const { id } = req.params;
+  const { faqId } = req.params;
   try {
-    const faq = await FAQ.findByIdAndRemove(id);
+    const faq = await FAQ.findByIdAndRemove(faqId);
     if (faq) {
       await FAQAnswer.deleteMany({
         _id: {
@@ -93,11 +96,11 @@ const deleteOne = async (req, res) => {
       });
     }
     return res.status(HTTPStatus.NOT_FOUND).json({
-      message: s`Cannot delete  this FAQ with id=${id}. Maybe this FAQ was not found!`,
+      message: `Cannot delete  this FAQ with id=${faqId}. Maybe this FAQ was not found!`,
     });
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
-      message: `Could not delete FQA with id= ${id}`,
+      message: `Could not delete FQA with id= ${faqId}`,
     });
   }
 };

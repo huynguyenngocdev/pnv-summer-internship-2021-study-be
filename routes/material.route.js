@@ -1,12 +1,12 @@
-import * as post from '../app/http/controllers/post.controller.js';
+import * as material from '../app/http/controllers/material.controller.js';
 import auth from '../app/http/middleware/auth.js';
 import upload from '../services/multer.js';
 import { Router } from 'express';
 const router = Router({ mergeParams: true });
 
 /**
- * @api {post} /api/classrooms Create a new post
- * @apiName Create a new post in the class
+ * @api {material} /api/classrooms Create a new material
+ * @apiName Create a new material in the class
  * @apiGroup Posts
  *
  * @apiHeader {String} authorization Bearer token.
@@ -22,9 +22,9 @@ const router = Router({ mergeParams: true });
  */
 
 router.post('/', [
-  post.checkClassExist,
+  material.checkClassExist,
   upload.array('fileAttachment'),
-  post.create,
+  material.create,
 ]);
 
 /**
@@ -45,11 +45,11 @@ router.post('/', [
  * @apiSampleRequest off
  */
 
-router.get('/', [auth, post.checkClassExist, post.findAll]);
+router.get('/', [auth, material.checkClassExist, material.findAll]);
 
 /**
- * @api {get} /api/classrooms/:classroomId/posts/:postId Get one post in a class
- * @apiName Get one post in a class
+ * @api {get} /api/classrooms/:classroomId/posts/:materialId Get one material in a class
+ * @apiName Get one material in a class
  * @apiGroup Posts
  *
  * @apiHeader {String} authorization Bearer token.
@@ -65,16 +65,16 @@ router.get('/', [auth, post.checkClassExist, post.findAll]);
  * @apiSampleRequest off
  */
 
-router.get('/:postId', [
+router.get('/:materialId', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  post.findOne,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  material.findOne,
 ]);
 
 /**
- * @api {put} /api/classrooms/:classroomId/posts/:postId Update one post in a class
- * @apiName Update one post in a class
+ * @api {put} /api/classrooms/:classroomId/posts/:materialId Update one material in a class
+ * @apiName Update one material in a class
  * @apiGroup Posts
  *
  * @apiHeader {String} authorization Bearer token.
@@ -89,15 +89,15 @@ router.get('/:postId', [
  * @apiSampleRequest off
  */
 
-router.put('/:postId', auth, upload.array('fileAttachment'), [
-  post.checkClassExist,
-  post.checkPostInclude,
-  post.update,
+router.put('/:materialId', auth, upload.array('fileAttachment'), [
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  material.update,
 ]);
 
 /**
- * @api {delete} /api/classrooms/:classroomId/posts/:postId Delete one post in a class
- * @apiName Delete one post in a class
+ * @api {delete} /api/classrooms/:classroomId/posts/:materialId Delete one material in a class
+ * @apiName Delete one material in a class
  * @apiGroup Posts
  *
  * @apiHeader {String} authorization Bearer token.
@@ -105,10 +105,10 @@ router.put('/:postId', auth, upload.array('fileAttachment'), [
  * @apiSampleRequest off
  */
 
-router.delete('/:postId', auth, [
-  post.checkClassExist,
-  post.checkPostInclude,
-  post.deleteOne,
+router.delete('/:materialId', auth, [
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  material.deleteOne,
 ]);
 
 /**
@@ -121,6 +121,6 @@ router.delete('/:postId', auth, [
  * @apiSampleRequest off
  */
 
-router.delete('/', auth, [post.checkClassExist, post.deleteAll]);
+router.delete('/', auth, [material.checkClassExist, material.deleteAll]);
 
 export default router;

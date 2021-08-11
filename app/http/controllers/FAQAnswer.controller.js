@@ -2,15 +2,25 @@ import db from '../../models/index.js';
 import HTTPStatus from 'http-status';
 import * as FAQController from './FAQ.controller.js';
 const FAQAnswer = db.FAQAnswers;
-
+const FAQ = db.FAQs;
+const User = db.users;
 //create FAQ answer
 
 const create = async (req, res) => {
-  const { idFAQ } = req.params;
-  const { answer, userId, userName } = req.body;
-  await FAQController.findOne(idFAQ);
+  const { faqId } = req.params;
+  const { answer } = req.body;
+  const { user_id } = req.user;
   try {
-    const answer_reponse = await FAQAnswer.create({ answer, userId, userName });
+    const user = await User.findById(user_id);
+    const answer_reponse = await FAQAnswer.create({
+      answer,
+      userId: user_id,
+      userName: user.name,
+    });
+
+    const faq = await FAQ.findByIdAndUpdate(faqId, {
+      listAnswer: [...req.faq.listAnswer, answer_reponse.id],
+    });
     return res.status(HTTPStatus.OK).send(answer_reponse);
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
@@ -21,10 +31,13 @@ const create = async (req, res) => {
 
 //get all answer in FQA
 const findAll = async (req, res) => {
-  const { idFAQ } = req.params;
-  await FAQController.findOne(idFAQ);
+  const { faqId } = req.params;
   try {
-    const answer_reponse = await FAQAnswer.find();
+    const answer_reponse = await FAQAnswer.find({
+      _id: {
+        $in: req.faq.listAnswer,
+      },
+    });
     return res.status(HTTPStatus.OK).send(answer_reponse);
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
@@ -36,82 +49,81 @@ const findAll = async (req, res) => {
 
 // find a single answer in FQA with an id
 const findOne = async (req, res) => {
-  const idFAQ = req.params.idFAQ;
-  await FAQController.findOne(idFAQ);
-  const { id } = req.params;
+  const { faqId, faqAnswerId } = req.params;
   try {
-    const answer_reponse = await FAQAnswer.findById(id);
-    if (answer_reponse) return res.send(answer_reponse);
+    const answer_reponse = await FAQAnswer.findById(faqAnswerId);
+    if (answer_reponse) return res.json(answer_reponse);
     return res
       .status(HTTPStatus.NOT_FOUND)
-      .send({ message: 'Not found FAQ answer with id ' + id });
+      .send({ message: 'Not found FAQ answer with id ' + faqAnswerId });
   } catch (error) {
-    return res
-      .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-      .send({ message: error || 'Error retrieving this FAQ with id=' + id });
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message:
+        error.message || 'Error retrieving this FAQ with id=' + faqAnswerId,
+    });
   }
 };
 
 const update = async (req, res) => {
-  const idFAQ = req.params.idFAQ;
-  await FAQController.findOne(idFAQ);
+  const { faqId, faqAnswerId } = req.params;
   if (!req.body) {
     return res.status(HTTPStatus.BAD_REQUEST).send({
       message: 'FAQ answer question  to update can not be empty!',
     });
   }
-  const { id } = req.params;
   try {
-    const answer_reponse = await FAQAnswer.findByIdAndUpdate(id, req.body, {
-      useFindAndModify: false,
-    });
+    const answer_reponse = await FAQAnswer.findByIdAndUpdate(
+      faqAnswerId,
+      req.body,
+      {
+        useFindAndModify: false,
+      }
+    );
     if (answer_reponse)
       return res.send({ message: 'FAQ answer was updated successfully.' });
     return req.status(HTTPStatus.NOT_FOUND).send({
-      message: `Cannot update FAQ answer with id=${id}. Maybe  answer of this FAQ was not found!`,
+      message: `Cannot update FAQ answer with id=${faqAnswerId}. Maybe  answer of this FAQ was not found!`,
     });
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
-      message: 'Error updating FAQ answer with id=' + id,
+      message: 'Error updating FAQ answer with id=' + faqAnswerId,
     });
   }
 };
 
 const deleteOne = async (req, res) => {
-  const { id, idFAQ } = req.params;
+  const { faqAnswerId, faqId } = req.params;
 
   try {
-    const faq = await FAQController.findOne(idFAQ);
-    if (!faq)
-      return res.status(HTTPStatus.NOT_FOUND).send({
-        message: `Cannot delete FAQ answer with id=${id}. Maybe FAQ question doesn't exists!`,
-      });
-    const answer_reponse = await FAQAnswer.findByIdAndRemove(id);
+    const answer_reponse = await FAQAnswer.findByIdAndRemove(faqAnswerId);
+    let arr = [...req.faq.listAnswer];
+    arr.splice(arr.indexOf(faqAnswerId), 1);
+    const faq = await FAQ.findByIdAndUpdate(req.faq.id, { listAnswer: arr });
+
     if (answer_reponse)
       return res.status(HTTPStatus.OK).send({
         message: 'FAQ  answer was deleted successfully!',
       });
 
     return res.status(HTTPStatus.NOT_FOUND).json({
-      message: `Cannot delete FAQ with id=${id}. Maybe FAQ answer was not found!`,
+      message: `Cannot delete FAQ with id=${faqAnswerId}. Maybe FAQ answer was not found!`,
     });
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
-      message: 'Could not delete FQA with id=' + id,
+      message: 'Could not delete FQA with id=' + faqAnswerId,
     });
   }
 };
 
 const deleteAll = async (req, res) => {
-  const { idFAQ } = req.params;
-  const faqAnswer = await FAQController.findOne(idFAQ);
+  const { faqId } = req.params;
   try {
-    const answer_reponse = await FAQAnswer.deleteMany({});
-    return res
-      .status(HTTPStatus.OK)
-      .json({
-        message: `${faqAnswer.deletedCount} comments were deleted successfully!`,
-      });
+    const faqAnswer = await FAQAnswer.deleteMany({});
+    const faq = await FAQ.findByIdAndUpdate(req.faq.id, { listAnswer: [] });
+
+    return res.status(HTTPStatus.OK).json({
+      message: `${faqAnswer.deletedCount} comments were deleted successfully!`,
+    });
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message:
@@ -119,4 +131,43 @@ const deleteAll = async (req, res) => {
     });
   }
 };
-export { create, findOne, findAll, update, deleteOne, deleteAll };
+const checkFAQExist = async (req, res, next) => {
+  const { faqId } = req.params;
+
+  try {
+    const faq = await FAQ.findById(faqId);
+    if (faq) {
+      req.faq = faq;
+      return next();
+    }
+    return res.status(HTTPStatus.NOT_FOUND).end();
+  } catch (error) {
+    return res
+      .status(HTTPStatus.INTERNAL_SERVER_ERROR)
+      .send({ message: `Error retrieving classrom with id= ${faqId}` });
+  }
+};
+const checkFAQAnswerInclude = async (req, res, next) => {
+  const { faqAnswerId } = req.params;
+
+  try {
+    if (req.faq.listAnswer.includes(faqAnswerId)) return next();
+    return res.status(HTTPStatus.FORBIDDEN).send({
+      message: `Error retrieving when using answer doesn't exist in classroom with id= ${req.faq.id}`,
+    });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message: `Error retrieving faqa with id= ${req.faq.id}`,
+    });
+  }
+};
+export {
+  create,
+  findOne,
+  findAll,
+  update,
+  deleteOne,
+  deleteAll,
+  checkFAQExist,
+  checkFAQAnswerInclude,
+};

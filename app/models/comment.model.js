@@ -2,21 +2,11 @@ import mongoose from 'mongoose';
 
 const schema = new mongoose.Schema(
   {
-    owner: {
-      type: String,
-      required: true,
-    },
-    message: {
-      type: String,
-      required: true,
-    },
-    isCommentCorrect: {
-      type: Boolean,
-      default: false,
-    },
-    listReply: {
-      type: Array,
-    },
+    ownerId: { type: String, required: true },
+    ownerName: { type: String, required: true },
+    message: { type: String, required: true },
+    isCommentCorrect: { type: Boolean, default: false },
+    listReply: { type: Array },
   },
   { timestamps: true }
 );

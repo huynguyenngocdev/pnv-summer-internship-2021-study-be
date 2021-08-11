@@ -1,17 +1,77 @@
 import * as FAQ from '../app/http/controllers/FAQ.controller.js';
 import { Router } from 'express';
+import auth from '../app/http/middleware/auth.js';
 
 const router = Router();
-router.post('/', FAQ.create);
 
-router.get('/', FAQ.findAll);
+/**
+ * @api {post} /api/faqs Create a new FAQ
+ * @apiGroup FAQ
+ *
+ * @apiHeader {String} authorization Bearer token.
+ * @apiParam {String} question the question
+ * @apiParam  {Array} [listAnswer=[]] list id of answer  for question
+ * @apiParam {Boolean} isSolve=false status of question
+ * @apiSampleRequest off
+ */
+router.post('/', auth, FAQ.create);
 
-router.get('/:id', FAQ.findOne);
+/**
+ * @api {get} /api/faqs Get all FAQ
+ * @apiGroup FAQ
+ *
+ * @apiHeader {String} authorization Bearer token.
+ *
+ * @apiSuccess {String} question the question
+ * @apiSuccess  {Array} listAnswer=[] list id of answer  for question
+ * @apiSuccess {Boolean} isSolve=false status of question
+ *
+ * @apiSampleRequest off
+ */
+router.get('/', auth, FAQ.findAll);
 
-router.put('/:id', FAQ.update);
+/**
+ * @api {get} /api/faqs/:id Get one FAQ
+ * @apiGroup FAQ
+ *
+ * @apiHeader {String} authorization Bearer token.
+ *
+ * @apiSuccess {String} question the question
+ * @apiSuccess  {Array} listAnswer=[] list id of answer  for question
+ * @apiSuccess {Boolean} isSolve=false status of question
+ *
+ * @apiSampleRequest off
+ */
+router.get('/:id', auth, FAQ.findOne);
 
-router.delete('/:id', FAQ.deleteOne);
+/**
+ * @api {put} /api/faqs/:id Update the FAQ
+ * @apiGroup FAQ
+ *
+ * @apiHeader {String} [authorization] Bearer token.
+ * @apiParam {String} question the question
+ * @apiParam  {Array} [listAnswer=[]] list id of answer  for question
+ * @apiParam {Boolean} [isSolve=false] status of question
+ * @apiSampleRequest off
+ */
+router.put('/:id', auth, FAQ.update);
 
-router.delete('/', FAQ.deleteAll);
+/**
+ * @api {delete} /api/faqs/:id Delete a FAQ
+ * @apiGroup FAQ
+ *
+ * @apiHeader {String} authorization Bearer token.
+ * @apiSampleRequest off
+ */
+router.delete('/:id', auth, FAQ.deleteOne);
+
+/**
+ * @api {delete} /api/faqs Delete all FAQs
+ * @apiGroup FAQ
+ *
+ * @apiHeader {String} authorization Bearer token.
+ * @apiSampleRequest off
+ */
+router.delete('/', auth, FAQ.deleteAll);
 
 export default router;

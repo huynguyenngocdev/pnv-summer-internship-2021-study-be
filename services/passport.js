@@ -5,6 +5,7 @@ import keys from '../config/config.js';
 import passport from 'passport';
 
 import User from '../app/models/user.model.js';
+import MyClassFolder from '../app/models/myClassFolder.model.js';
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -33,14 +34,19 @@ passport.use(
       if (existingUser) {
         return done(null, existingUser);
       }
-
       const user = await new User({
         googleId: encryptedGoogleId,
         email: profile.emails[0].value,
         name: profile.name.familyName + ' ' + profile.name.givenName,
         avatar: profile.photos[0].value,
-      }).save();
-
+      });
+      const myfolder = await MyClassFolder.create({
+        name: 'myfolder',
+        userName: profile.name.familyName + ' ' + profile.name.givenName,
+        userId: user.id,
+      });
+      user.myClassFolder = myfolder.id;
+      user.save();
       return done(null, user);
     }
   )

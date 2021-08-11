@@ -7,6 +7,15 @@ const schema = mongoose.Schema(
     },
     listAnswer: {
       type: Array,
+      default: [],
+    },
+    onwerId: {
+      type: String,
+      required: true,
+    },
+    ownerName: {
+      type: String,
+      required: true,
     },
     isSolve: {
       type: Boolean,
@@ -22,4 +31,4 @@ schema.method('toJSON', function () {
   return object;
 });
 
-export default mongoose.model('FAQ', schema);
+export default mongoose.model('FAQs', schema);

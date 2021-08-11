@@ -123,7 +123,7 @@ dist
 .pnp.*
 
 #exclude docs, apidoc is only create when server start
-docs
+
 docs/
 
 # End of https://www.toptal.com/developers/gitignore/api/node

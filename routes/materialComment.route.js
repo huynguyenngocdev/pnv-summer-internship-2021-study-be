@@ -1,5 +1,5 @@
 import * as comment from '../app/http/controllers/comment.controller.js';
-import * as post from '../app/http/controllers/post.controller.js';
+import * as material from '../app/http/controllers/material.controller.js';
 
 import { Router } from 'express';
 import auth from '../app/http/middleware/auth.js';
@@ -7,7 +7,7 @@ import auth from '../app/http/middleware/auth.js';
 const router = Router({ mergeParams: true });
 
 /**
- * @api {post} /api/classrooms/:classroomId/posts/:postId/comments Create a new comment in a post
+ * @api {material} /api/classrooms/:classroomId/materials/:materialId/comments Create a new comment in a material
  * @apiGroup Comments
  *
  * @apiHeader {String} authorization Bearer token.
@@ -23,14 +23,14 @@ const router = Router({ mergeParams: true });
 
 router.post('/', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  comment.checkPostExist,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  comment.checkMaterialExist,
   comment.create,
 ]);
 
 /**
- * @api {get} /api/classrooms/:classroomId/posts/:postId/comments Get all comment in the post
+ * @api {get} /api/classrooms/:classroomId/materials/:materialId/comments Get all comment in the material
  * @apiGroup Comments
  *
  * @apiHeader {String} authorization Bearer token.
@@ -47,14 +47,14 @@ router.post('/', [
 
 router.get('/', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  comment.checkPostExist,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  comment.checkMaterialExist,
   comment.findAll,
 ]);
 
 /**
- * @api {get} /api/classrooms/:classroomId/posts/:postId/comments/:commentId Get one comment in the post
+ * @api {get} /api/classrooms/:classroomId/materials/:materialId/comments/:commentId Get one comment in the material
  * @apiGroup Comments
  *
  * @apiHeader {String} authorization Bearer token.
@@ -71,15 +71,15 @@ router.get('/', [
 
 router.get('/:commentId', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  comment.checkPostExist,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  comment.checkMaterialExist,
   comment.checkCommentInclude,
   comment.findOne,
 ]);
 
 /**
- * @api {put} /api/classrooms/:classroomId/posts/:postId/comments/:commentId Update a comment in a post
+ * @api {put} /api/classrooms/:classroomId/materials/:materialId/comments/:commentId Update a comment in a material
  * @apiGroup Comments
  *
  * @apiHeader {String} authorization Bearer token.
@@ -95,15 +95,15 @@ router.get('/:commentId', [
 
 router.put('/:commentId', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  comment.checkPostExist,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  comment.checkMaterialExist,
   comment.checkCommentInclude,
   comment.update,
 ]);
 
 /**
- * @api {delete} /api/classrooms/:classroomId/posts/:postId/comments/:commentId Delete a comment in the post
+ * @api {delete} /api/classrooms/:classroomId/materials/:materialId/comments/:commentId Delete a comment in the material
  * @apiGroup Comments
  *
  * @apiHeader {String} authorization Bearer token.
@@ -113,15 +113,15 @@ router.put('/:commentId', [
 
 router.delete('/:commentId', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  comment.checkPostExist,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  comment.checkMaterialExist,
   comment.checkCommentInclude,
   comment.deleteOne,
 ]);
 
 /**
- * @api {delete} /api/classrooms/:classroomId/posts/:postId/comments/ Delete all comments in the post
+ * @api {delete} /api/classrooms/:classroomId/materials/:materialId/comments/ Delete all comments in the material
  * @apiGroup Comments
  *
  * @apiHeader {String} authorization Bearer token.
@@ -131,9 +131,9 @@ router.delete('/:commentId', [
 
 router.delete('/', [
   auth,
-  post.checkClassExist,
-  post.checkPostInclude,
-  comment.checkPostExist,
+  material.checkClassExist,
+  material.checkMaterialInclude,
+  comment.checkMaterialExist,
   comment.deleteAll,
 ]);
 

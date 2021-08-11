@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 const schema = mongoose.Schema(
   {
-    anwer: {
+    answer: {
       type: String,
       required: true,
     },
-    userID: {
+    userId: {
       type: String,
       required: true,
     },
@@ -23,4 +23,4 @@ schema.method('toJSON', function () {
   return object;
 });
 
-export default mongoose.model('FAQAnswer', schema);
+export default mongoose.model('FAQAnswers', schema);

@@ -1,0 +1,2 @@
+Folder tmp is used for upload files to Google Drive.
+It is an intermediary.

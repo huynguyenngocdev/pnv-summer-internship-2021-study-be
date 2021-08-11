@@ -1,14 +1,14 @@
 import HTTPStatus from 'http-status';
 import jwt from 'jsonwebtoken';
 
-import TOKEN_KEY from '../../../config/config.js';
+import env from '../../../config/config.js';
+const { TOKEN_KEY } = env;
 
 const verifyToken = (req, res, next) => {
   const {
     headers: { authorization },
   } = req;
   const token = authorization && authorization.split(' ').pop();
-
   if (!token) {
     return res
       .status(HTTPStatus.UNAUTHORIZED)

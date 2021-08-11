@@ -1,8 +1,12 @@
 import mongoose from 'mongoose';
 
-const schema = new mongoose.Schema(
+const schema = mongoose.Schema(
   {
-    owner: {
+    ownerId: {
+      type: String,
+      required: true,
+    },
+    ownerName: {
       type: String,
       required: true,
     },
