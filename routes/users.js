@@ -1,12 +1,10 @@
-const express = require("express");
-const router = express.Router();
-const auth = require("../middleware/auth");
-const HTTPStatus = require("http-status");
-const User = require("../model/User");
+import { Router } from 'express';
+import auth from '../app/http/middleware/auth.js';
+import users from '../app/models/user.model.js';
+const router = Router();
 
-router.get("/", auth, async (req, res, next) => {
-  let users = await User.find();
-  return res.status(HTTPStatus.OK).json(users);
-});
+router.post('/', auth, users.create);
 
-module.exports = router;
+router.get('/:id', auth, users.findOne);
+
+export default router;
