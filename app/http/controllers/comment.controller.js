@@ -109,17 +109,17 @@ const deleteOne = async (req, res) => {
       });
     }
     if (req.post) {
-      let arr = [...req.post.listComments];
-      arr.splice(arr.indexOf(commentId), 1);
       await Post.findByIdAndUpdate(req.post.id, {
-        listComments: arr,
+        listComments: [...req.faq.listAnswer].filter(
+          (item) => item !== commentId
+        ),
       });
     }
     if (req.material) {
-      let arr = [...req.material.listComments];
-      arr.splice(arr.indexOf(commentId), 1);
       await Material.findByIdAndUpdate(req.material.id, {
-        listComments: arr,
+        listComments: [...req.faq.listAnswer].filter(
+          (item) => item !== commentId
+        ),
       });
     }
     const replyComments = await ReplyComment.deleteMany({

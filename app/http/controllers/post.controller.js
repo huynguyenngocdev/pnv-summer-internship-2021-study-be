@@ -15,12 +15,9 @@ const create = async (req, res) => {
 
   try {
     const user = await User.findById(user_id);
-    let fileAttachmentUrl;
-    if (req.files) {
-      await uploadFileToDrive(req.files).then((res) => {
-        fileAttachmentUrl = [...res];
-      });
-    }
+    const fileAttachmentUrl = req.files
+      ? await uploadFileToDrive(req.files)
+      : [];
     const post = await Post.create({
       content,
       title,
@@ -140,10 +137,10 @@ const deleteOne = async (req, res) => {
       });
     }
     if (post) {
-      let arr = [...req.classroom.listQuestions];
-      arr.splice(arr.indexOf(postId), 1);
       await Post.findByIdAndUpdate(req.post.id, {
-        listQuestions: arr,
+        listQuestions: [...req.classroom.listQuestions].filter(
+          (item) => item !== postId
+        ),
       });
 
       if (post.fileAttachment) {

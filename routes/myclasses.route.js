@@ -64,5 +64,10 @@ router.put('/:classId', [
   myClass.checkClassInclude,
   myClass.update,
 ]);
-
+router.delete('/:classId', [
+  auth,
+  myClass.findFolder,
+  myClass.checkClassInclude,
+  myClass.deleteOne,
+]);
 export default router;

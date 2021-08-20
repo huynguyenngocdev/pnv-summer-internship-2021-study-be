@@ -12,16 +12,16 @@ const create = async (req, res) => {
   const { user_id } = req.user;
   try {
     const user = await User.findById(user_id);
-    const answer_reponse = await FAQAnswer.create({
+    const responseAnswer = await FAQAnswer.create({
       answer,
       userId: user_id,
       userName: user.name,
     });
 
     const faq = await FAQ.findByIdAndUpdate(faqId, {
-      listAnswer: [...req.faq.listAnswer, answer_reponse.id],
+      listAnswer: [...req.faq.listAnswer, responseAnswer.id],
     });
-    return res.status(HTTPStatus.OK).send(answer_reponse);
+    return res.status(HTTPStatus.OK).send(responseAnswer);
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message: error.message || 'Some error occurred while creating your FAQ',
@@ -33,12 +33,12 @@ const create = async (req, res) => {
 const findAll = async (req, res) => {
   const { faqId } = req.params;
   try {
-    const answer_reponse = await FAQAnswer.find({
+    const responseAnswer = await FAQAnswer.find({
       _id: {
         $in: req.faq.listAnswer,
       },
     });
-    return res.status(HTTPStatus.OK).send(answer_reponse);
+    return res.status(HTTPStatus.OK).send(responseAnswer);
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message:
@@ -51,8 +51,8 @@ const findAll = async (req, res) => {
 const findOne = async (req, res) => {
   const { faqId, faqAnswerId } = req.params;
   try {
-    const answer_reponse = await FAQAnswer.findById(faqAnswerId);
-    if (answer_reponse) return res.json(answer_reponse);
+    const responseAnswer = await FAQAnswer.findById(faqAnswerId);
+    if (responseAnswer) return res.json(responseAnswer);
     return res
       .status(HTTPStatus.NOT_FOUND)
       .send({ message: 'Not found FAQ answer with id ' + faqAnswerId });
@@ -72,14 +72,14 @@ const update = async (req, res) => {
     });
   }
   try {
-    const answer_reponse = await FAQAnswer.findByIdAndUpdate(
+    const responseAnswer = await FAQAnswer.findByIdAndUpdate(
       faqAnswerId,
       req.body,
       {
         useFindAndModify: false,
       }
     );
-    if (answer_reponse)
+    if (responseAnswer)
       return res.send({ message: 'FAQ answer was updated successfully.' });
     return req.status(HTTPStatus.NOT_FOUND).send({
       message: `Cannot update FAQ answer with id=${faqAnswerId}. Maybe  answer of this FAQ was not found!`,
@@ -95,12 +95,15 @@ const deleteOne = async (req, res) => {
   const { faqAnswerId, faqId } = req.params;
 
   try {
-    const answer_reponse = await FAQAnswer.findByIdAndRemove(faqAnswerId);
-    let arr = [...req.faq.listAnswer];
-    arr.splice(arr.indexOf(faqAnswerId), 1);
-    const faq = await FAQ.findByIdAndUpdate(req.faq.id, { listAnswer: arr });
+    const responseAnswer = await FAQAnswer.findByIdAndRemove(faqAnswerId);
 
-    if (answer_reponse)
+    const faq = await FAQ.findByIdAndUpdate(req.faq.id, {
+      listAnswer: [...req.faq.listAnswer].filter(
+        (item) => item !== faqAnswerId
+      ),
+    });
+
+    if (responseAnswer)
       return res.status(HTTPStatus.OK).send({
         message: 'FAQ  answer was deleted successfully!',
       });

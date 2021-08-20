@@ -15,12 +15,9 @@ const create = async (req, res) => {
 
   try {
     const user = await User.findById(user_id);
-    let fileAttachmentUrl;
-    if (req.files) {
-      await uploadFileToDrive(req.files).then((res) => {
-        fileAttachmentUrl = [...res];
-      });
-    }
+    const fileAttachmentUrl = req.files
+      ? await uploadFileToDrive(req.files)
+      : [];
 
     const material = await Material.create({
       content,
@@ -133,11 +130,11 @@ const deleteOne = async (req, res) => {
       });
     }
     if (material) {
-      let arr = [...req.classroom.materials];
-      arr.splice(arr.indexOf(materialId), 1);
       if (replyComment) {
         await Material.findByIdAndUpdate(req.material.id, {
-          materials: arr,
+          materials: [...req.classroom.materials].filter(
+            (item) => item !== materialId
+          ),
         });
         return res.send({
           message: 'Comment was deleted successfully!',

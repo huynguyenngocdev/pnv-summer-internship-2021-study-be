@@ -97,13 +97,14 @@ const deleteOne = async (req, res) => {
   const { flashCardId } = req.params;
   try {
     const flashCard = await Flashcard.findByIdAndRemove(flashCardId);
-    let arr = [...req.lesson.flashCards];
-    arr.splice(arr.indexOf(flashCardId), 1);
+
     if (flashCard) {
       await Lesson.findByIdAndUpdate(
         req.lesson.id,
         {
-          flashCards: arr,
+          flashCards: [...req.lesson.flashCards].filter(
+            (item) => item !== flashCardId
+          ),
         },
         {
           useFindAndModify: false,

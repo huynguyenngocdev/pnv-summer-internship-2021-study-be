@@ -97,10 +97,10 @@ const deleteOne = async (req, res) => {
   try {
     const replyComment = await ReplyComment.findByIdAndRemove(replyCommentId);
     if (replyComment) {
-      let arr = [...req.comment.listReply];
-      arr.splice(arr.indexOf(replyCommentId), 1);
       await Comment.findByIdAndUpdate(req.comment.id, {
-        listReply: arr,
+        listReply: [...req.comment.listReply].filter(
+          (item) => item !== replyCommentId
+        ),
       });
       return res.send({
         message: 'Comment was deleted successfully!',

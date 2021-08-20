@@ -24,11 +24,11 @@ const drive = google.drive({ version: 'v3', auth: oauth2Client });
 const uploadFileToDrive = async (files) => {
   try {
     const promiseArray = files.map(async (ele) => {
-      let fileMetadata = {
+      const fileMetadata = {
         name: ele.filename,
         parents: [GOOGLE_FOLDER_ID],
       };
-      let media = {
+      const media = {
         mimeType: ele.mimetype,
         body: fs.createReadStream(ele.path),
       };
@@ -55,7 +55,7 @@ const uploadFileToDrive = async (files) => {
           },
         });
 
-        let url = `https://drive.google.com/file/d/${ele}/preview`;
+        const url = `https://drive.google.com/file/d/${ele}/preview`;
 
         return url;
       })

@@ -102,11 +102,9 @@ const deleteOne = async (req, res) => {
   const { id: classId, lessons } = req.myClass;
   try {
     const lesson = await Lesson.findByIdAndRemove(lessonId);
-    let arr = [...lessons];
-    arr.splice(arr.indexOf(lessonId), 1);
     if (lesson) {
       await MyClass.findByIdAndUpdate(classId, {
-        lessons: arr,
+        lessons: [...lessons].filter((item) => item !== lessonId),
       });
       const flashCard = await FlashCard.deleteMany({
         _id: {

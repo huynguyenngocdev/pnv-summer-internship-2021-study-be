@@ -51,15 +51,49 @@ const findAll = async (req, res) => {
             $in: user_id,
           },
         };
-    const listClassJoin = await Classroom.find(condition);
-
-    const listClassOwn = await Classroom.find({
-      ownerId: {
-        $in: user_id,
-      },
+    const listClassJoin = await Classroom.find(condition, {
+      listQuestions: 0,
+      materials: 0,
     });
+    const { avatar: onwerAvatar } = await User.findById(user_id, {
+      avatar: 1,
+      _id: 0,
+    });
+    const listClassOwn = await Classroom.find(
+      {
+        ownerId: {
+          $in: user_id,
+        },
+      },
+      {
+        listQuestions: 0,
+        materials: 0,
+      }
+    );
 
-    return res.status(HTTPStatus.OK).json({ listClassJoin, listClassOwn });
+    const dataClassOwn = await Promise.all(
+      listClassOwn.map(async (item) => {
+        const { listUserJoined, ...props } = item._doc;
+        const userJoin = await User.find(
+          { _id: { $in: listUserJoined } },
+          { avatar: 1, name: 1, email: 1, _id: 0 }
+        );
+        return { ...props, onwerAvatar, userJoin };
+      })
+    );
+    const dataClassJoin = await Promise.all(
+      listClassJoin.map(async (item) => {
+        const { listUserJoined, ownerId, ...props } = item._doc;
+        const userJoin = await User.find(
+          { _id: { $in: listUserJoined } },
+          { avatar: 1, name: 1, email: 1, _id: 0 }
+        );
+        const { avatar } = await User.findById(ownerId);
+        return { ...props, onwerAvatar: avatar, userJoin };
+      })
+    );
+
+    return res.status(HTTPStatus.OK).json({ dataClassJoin, dataClassOwn });
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).json({
       message:
@@ -78,7 +112,8 @@ const findOne = async (req, res) => {
       $or: [{ listUserJoined: { $in: user_id } }, { ownerId: user_id }],
     });
     const user = await User.findById(classroom.ownerId);
-    const { listUserJoined } = classroom;
+    const { listUserJoined, listQuestions, materials, ...restProps } =
+      classroom._doc;
 
     const userJoined = await User.find(
       {
@@ -89,16 +124,7 @@ const findOne = async (req, res) => {
       { name: 1, email: 1, avatar: 1, _id: 0 }
     );
     const response = {
-      ..._.pick(classroom, [
-        'ownerName',
-        'createdAt',
-        'updatedAt',
-        'code',
-        'backgroundImage',
-        'topic',
-        'className',
-        'member',
-      ]),
+      ...restProps,
       userJoined,
       ownerAvatar: user.avatar,
     };
@@ -121,6 +147,11 @@ const update = async (req, res) => {
   if (!req.body) {
     return res.status(HTTPStatus.BAD_REQUEST).send({
       message: 'Data to update can not be empty!',
+    });
+  }
+  if (req.body.ownerId) {
+    return res.status(HTTPStatus.BAD_REQUEST).send({
+      message: 'Cannot update ownerId',
     });
   }
 
