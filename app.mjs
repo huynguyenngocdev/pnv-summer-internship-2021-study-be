@@ -54,7 +54,7 @@ app.use('/docs', express.static(path.join(__dirname, 'docs')));
 app.use('/', indexRouter);
 app.use('/api', indexRouter);
 app.use('/auth', authRouter);
-
+app.use('/api/user', usersRouter);
 app.use('/api/classrooms', classroomRouter);
 classroomRouter.use('/:classroomId/materials', materialRouter);
 materialRouter.use('/:materialId/comments', materialCommentRouter);

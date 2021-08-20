@@ -3,19 +3,19 @@ import HTTPStatus from 'http-status';
 const User = db.users;
 
 const findOne = async (req, res) => {
-  const { userId } = req.params;
   try {
-    const user = await User.findById(userId);
+    const { user_id } = req.user;
+    const user = await User.findById(user_id);
     if (!user) {
       return res
         .status(HTTPStatus.NOT_FOUND)
-        .send({ message: `Not found user with id ${userId}` });
+        .send({ message: `Not found user` });
     }
-    return res.json(user);
+    return res.status(HTTPStatus.FOUND).json(user);
   } catch (error) {
     return res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-      .send({ message: `Error retrieving user with id=${userId}` });
+      .send({ message: `Error retrieving user` });
   }
 };
 const update = async (req, res) => {

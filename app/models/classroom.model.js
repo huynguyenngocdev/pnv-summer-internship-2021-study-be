@@ -4,7 +4,7 @@ const schema = new mongoose.Schema(
   {
     className: { type: String, required: true },
     topic: { type: String, required: true },
-    code: { type: String, unique: true },
+    code: { type: String, required: true, unique: true },
     member: { type: Number, default: 1 },
     ownerId: { type: String, required: true },
     ownerName: { type: String, required: true },

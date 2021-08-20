@@ -9,7 +9,8 @@ const router = Router();
  * @apiGroup FAQ
  *
  * @apiHeader {String} authorization Bearer token.
- * @apiParam {String} question the question
+ * @apiParam {String} question the question of the FAQ
+ * @apiParam {String} image image of the FAQ
  * @apiParam  {Array} [listAnswer=[]] list id of answer  for question
  * @apiParam {Boolean} isSolve=false status of question
  * @apiSampleRequest off
@@ -23,6 +24,7 @@ router.post('/', auth, FAQ.create);
  * @apiHeader {String} authorization Bearer token.
  *
  * @apiSuccess {String} question the question
+ * @apiSuccess {String} image image of the FAQ
  * @apiSuccess  {Array} listAnswer=[] list id of answer  for question
  * @apiSuccess {Boolean} isSolve=false status of question
  *
@@ -37,6 +39,7 @@ router.get('/', auth, FAQ.findAll);
  * @apiHeader {String} authorization Bearer token.
  *
  * @apiSuccess {String} question the question
+ * @apiSuccess {String} image image of the FAQ
  * @apiSuccess  {Array} listAnswer=[] list id of answer  for question
  * @apiSuccess {Boolean} isSolve=false status of question
  *
@@ -48,10 +51,13 @@ router.get('/:id', auth, FAQ.findOne);
  * @api {put} /api/faqs/:id Update the FAQ
  * @apiGroup FAQ
  *
- * @apiHeader {String} [authorization] Bearer token.
- * @apiParam {String} question the question
+ * @apiHeader {String} authorization Bearer token.
+ *
+ * @apiParam {String} [question] the question
+ * @apiParam {String} [image] image of the FAQ
  * @apiParam  {Array} [listAnswer=[]] list id of answer  for question
  * @apiParam {Boolean} [isSolve=false] status of question
+ *
  * @apiSampleRequest off
  */
 router.put('/:id', auth, FAQ.update);

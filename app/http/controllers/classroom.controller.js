@@ -1,6 +1,5 @@
 import db from '../../models/index.js';
 import HTTPStatus from 'http-status';
-import httpStatus from 'http-status';
 import _ from 'lodash';
 const Classroom = db.classrooms;
 const Post = db.posts;
@@ -62,7 +61,7 @@ const findAll = async (req, res) => {
 
     return res.status(HTTPStatus.OK).json({ listClassJoin, listClassOwn });
   } catch (error) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).json({
       message:
         error.message || 'Some error occurred while retrieving classrooms.',
     });
@@ -202,4 +201,95 @@ const deleteAll = async (req, res) => {
   }
 };
 
-export { create, update, deleteAll, deleteOne, findAll, findOne };
+const joinClassroom = async (req, res) => {
+  try {
+    const { code } = req.query;
+    const { user_id } = req.user;
+    const user = await User.findById(user_id);
+    if (!user) {
+      return res
+        .status(HTTPStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'No one user match with token!' });
+    }
+
+    const classroom = await Classroom.findOne({ code: code });
+
+    if (!code || !classroom) {
+      return res
+        .status(HTTPStatus.NOT_FOUND)
+        .json({ message: 'Code or Classroom is not existing!' });
+    }
+
+    if (
+      classroom.ownerId != user_id &&
+      !classroom.listUserJoined.find((ele) => ele == user_id)
+    ) {
+      await Classroom.updateOne(
+        { code: code },
+        { $push: { listUserJoined: [user_id] }, $inc: { member: 1 } }
+      );
+      return res
+        .status(HTTPStatus.OK)
+        .json({ message: 'Join in the Classroom successful.' });
+    }
+    return res
+      .status(HTTPStatus.BAD_REQUEST)
+      .json({ message: 'You have been in this classroom!' });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message: error.message || 'Some error occurred while join in classroom.',
+    });
+  }
+};
+
+const leaveClassroom = async (req, res) => {
+  try {
+    const { classroomId } = req.params;
+    const { user_id } = req.user;
+    const user = await User.findById(user_id);
+    if (!user) {
+      return res
+        .status(HTTPStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'No one user match with token!' });
+    }
+
+    const classroom = await Classroom.findById(classroomId);
+
+    if (!classroom) {
+      return res
+        .status(HTTPStatus.NOT_FOUND)
+        .json({ message: 'Classroom is not existing!' });
+    }
+
+    if (classroom.ownerId != user_id) {
+      await Classroom.findByIdAndUpdate(classroomId, {
+        $pull: { listUserJoined: user_id },
+        $inc: { member: -1 },
+      });
+      return res.status(HTTPStatus.OK).json({
+        message: 'Leave the classroom successful!',
+      });
+    } else {
+      return res.status(HTTPStatus.BAD_REQUEST).json({
+        message:
+          'You are ower of this classroom, can not leave. Please delete the classroom!',
+      });
+    }
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message:
+        error.message || 'Some error occurred while removing all classrooms.',
+    });
+  }
+};
+
+export {
+  create,
+  update,
+  deleteAll,
+  deleteOne,
+  findAll,
+  findOne,
+  joinClassroom,
+  leaveClassroom,
+};

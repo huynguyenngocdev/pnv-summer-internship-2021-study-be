@@ -7,8 +7,6 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: null },
     email: { type: String, unique: true },
     block: { type: Boolean, default: 0 },
-    listClassJoin: { type: Array, default: [] },
-    listClassOwn: { type: Array, default: [] },
     myClassFolder: { type: String, default: null },
     token: { type: String },
   },

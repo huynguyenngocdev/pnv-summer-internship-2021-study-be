@@ -12,6 +12,7 @@ const create = async (req, res) => {
     const faq = await FAQ.create({
       question,
       answer,
+      image,
       ownerId: user_id,
       ownerName: user.name,
     });

@@ -5,6 +5,26 @@ import auth from '../app/http/middleware/auth.js';
 const router = Router();
 
 /**
+ * @api {get} /api/classrooms/joinClassroom?code=<code-to-join-classroom> Join in a classroom
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/joinClassroom?code=abcdef
+ * @apiSampleRequest off
+ */
+router.get('/joinClassroom', auth, classroom.joinClassroom);
+
+/**
+ * @api {get} /api/classrooms/:classroomId/leaveClassroom Leave in a classroom
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/leaveClassroom
+ * @apiSampleRequest off
+ */
+router.get('/:classroomId/leaveClassroom', auth, classroom.leaveClassroom);
+
+/**
  * @api {post} /api/classrooms Create a new classroom
  * @apiGroup Classrooms
  *
@@ -101,6 +121,6 @@ router.delete('/:classroomId', auth, classroom.deleteOne);
  * @apiHeader {String} authorization Bearer token.
  * @apiSampleRequest off
  */
-router.delete('/', classroom.deleteAll);
+router.delete('/', auth, classroom.deleteAll);
 
 export default router;
