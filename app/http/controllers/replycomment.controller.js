@@ -27,15 +27,21 @@ const create = async (req, res) => {
   }
 };
 
-//get all replycomment
 const findAll = async (req, res) => {
   try {
-    const replyComment = await ReplyComment.find({
+    const replyComments = await ReplyComment.find({
       _id: {
         $in: req.comment.listReply,
       },
     });
-    return res.send(replyComment);
+    const dataReplyComments = await Promise.all(
+      replyComments.map(async (element) => {
+        const { avatar: ownerAvatar } = await User.findById(element.ownerId);
+        element._doc.ownerAvatar = ownerAvatar;
+        return element;
+      })
+    );
+    return res.json(dataReplyComments);
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message:
@@ -49,10 +55,12 @@ const findOne = async (req, res) => {
   const { replyCommentId } = req.params;
   try {
     const replyComment = await ReplyComment.findById(replyCommentId);
-    if (replyComment) return res.send(replyComment);
-    return res.status(HTTPStatus.NOT_FOUND).send({
-      message: `Cannot update ReplyComment with id=${replyCommentId}. Maybe reply comment was not found!`,
-    });
+    if (!replyComment)
+      return res.status(HTTPStatus.NOT_FOUND).send({
+        message: `Cannot update ReplyComment with id=${replyCommentId}. Maybe reply comment was not found!`,
+      });
+    const { avatar: ownerAvatar } = await User.findById(replyComment.ownerId);
+    replyComment._doc.ownerAvatar = ownerAvatar;
     return res.send(replyComment);
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({

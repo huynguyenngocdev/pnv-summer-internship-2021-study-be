@@ -22,6 +22,7 @@ const router = Router({ mergeParams: true });
  */
 
 router.post('/', [
+  auth,
   material.checkClassExist,
   upload.array('fileAttachment'),
   material.create,

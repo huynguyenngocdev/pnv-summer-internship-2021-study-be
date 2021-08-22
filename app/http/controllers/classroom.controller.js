@@ -1,12 +1,19 @@
 import db from '../../models/index.js';
 import HTTPStatus from 'http-status';
 import _ from 'lodash';
-const Classroom = db.classrooms;
-const Post = db.posts;
-const User = db.users;
-const Comment = db.comments;
-const ReplyComment = db.replycomments;
+import crypto from 'crypto';
+const {
+  classrooms: Classroom,
+  posts: Post,
+  users: User,
+  comments: Comment,
+  materials: Materials,
 
+  replycomments: ReplyComment,
+  notifications: Notification,
+} = db;
+import config from '../../../config/config.js';
+const { SECRET_KEY } = config;
 //create comments
 const create = async (req, res) => {
   try {
@@ -55,7 +62,7 @@ const findAll = async (req, res) => {
       listQuestions: 0,
       materials: 0,
     });
-    const { avatar: onwerAvatar } = await User.findById(user_id, {
+    const { avatar: ownerAvatar } = await User.findById(user_id, {
       avatar: 1,
       _id: 0,
     });
@@ -73,23 +80,23 @@ const findAll = async (req, res) => {
 
     const dataClassOwn = await Promise.all(
       listClassOwn.map(async (item) => {
-        const { listUserJoined, ...props } = item._doc;
+        const { _id: id, listUserJoined, ...props } = item._doc;
         const userJoin = await User.find(
           { _id: { $in: listUserJoined } },
           { avatar: 1, name: 1, email: 1, _id: 0 }
         );
-        return { ...props, onwerAvatar, userJoin };
+        return { ...props, id, ownerAvatar, userJoin };
       })
     );
     const dataClassJoin = await Promise.all(
       listClassJoin.map(async (item) => {
-        const { listUserJoined, ownerId, ...props } = item._doc;
+        const { _id: id, listUserJoined, ownerId, ...props } = item._doc;
         const userJoin = await User.find(
           { _id: { $in: listUserJoined } },
           { avatar: 1, name: 1, email: 1, _id: 0 }
         );
         const { avatar } = await User.findById(ownerId);
-        return { ...props, onwerAvatar: avatar, userJoin };
+        return { ...props, id, ownerAvatar: avatar, userJoin };
       })
     );
 
@@ -112,8 +119,13 @@ const findOne = async (req, res) => {
       $or: [{ listUserJoined: { $in: user_id } }, { ownerId: user_id }],
     });
     const user = await User.findById(classroom.ownerId);
-    const { listUserJoined, listQuestions, materials, ...restProps } =
-      classroom._doc;
+    const {
+      listUserJoined,
+      listQuestions,
+      materials,
+      _id: id,
+      ...restProps
+    } = classroom._doc;
 
     const userJoined = await User.find(
       {
@@ -125,6 +137,7 @@ const findOne = async (req, res) => {
     );
     const response = {
       ...restProps,
+      id,
       userJoined,
       ownerAvatar: user.avatar,
     };
@@ -189,19 +202,45 @@ const deleteOne = async (req, res) => {
         message: `Cannot delete classrom with id=${classroomId}. Maybe classrom was not found or No permission!`,
       });
     }
-    const posts = await Post.deleteMany({
+    const posts = await Post.find({
       _id: {
         $in: classroom.listQuestions,
       },
     });
-    const comments = await Comment.deleteMany({
+    const materials = await Materials.find({
       _id: {
-        $in: posts.listComments,
+        $in: classroom.materials,
       },
     });
+    await Post.deleteMany({
+      _id: {
+        $in: classroom.listQuestions,
+      },
+    });
+    await Materials.deleteMany({
+      _id: {
+        $in: classroom.materials,
+      },
+    });
+    const listComments = [
+      ...posts.map((element) => element.listComments),
+      ...materials.map((element) => element.listComments),
+    ];
+    const comments = await Comment.find({
+      _id: {
+        $in: listComments,
+      },
+    });
+    await Comment.deleteMany({
+      _id: {
+        $in: listComments,
+      },
+    });
+    const listReply = comments.map((element) => element.listReply);
+
     const replyComment = await ReplyComment.deleteMany({
       _id: {
-        $in: comments.listReply,
+        $in: listReply,
       },
     });
     return res.status(HTTPStatus.OK).json({
@@ -210,19 +249,66 @@ const deleteOne = async (req, res) => {
     });
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
-      message: `Could not delete classroom with id= ${classroomId}}`,
+      message: `Could not delete classroom with id= ${classroomId}`,
     });
   }
 };
 
 const deleteAll = async (req, res) => {
+  const { user_id } = req.user;
   try {
-    const classrooms = await Classroom.deleteMany({});
-    await Post.deleteMany({});
-    await Comment.deleteMany({});
-    await ReplyComment.deleteMany({});
+    const classrooms = await Classroom.find({ ownerId: user_id });
+    const deletedClassrooms = await Classroom.deleteMany({ ownerId: user_id });
+    if (!deletedClassrooms.deletedCount)
+      return res.json({ message: 'Cannot find any classroom to delete' });
+
+    const listPosts = classrooms.map((element) => element.listQuestions);
+    const listMaterials = classrooms.map((element) => element.materials);
+
+    const posts = await Post.find({
+      _id: {
+        $in: listPosts,
+      },
+    });
+    const materials = await Materials.find({
+      _id: {
+        $in: listMaterials,
+      },
+    });
+    await Post.deleteMany({
+      _id: {
+        $in: listPosts,
+      },
+    });
+    await Materials.deleteMany({
+      _id: {
+        $in: listMaterials,
+      },
+    });
+    const listComments = [
+      ...posts.map((element) => element.listComments),
+      ...materials.map((element) => element.listComments),
+    ];
+    const comments = await Comment.find({
+      _id: {
+        $in: listComments,
+      },
+    });
+    await Comment.deleteMany({
+      _id: {
+        $in: listComments,
+      },
+    });
+    const listReply = comments.map((element) => element.listReply);
+
+    await ReplyComment.deleteMany({
+      _id: {
+        $in: listReply,
+      },
+    });
+
     return res.status(HTTPStatus.OK).json({
-      message: `${classrooms.deletedCount} classrooms were deleted successfully!`,
+      message: `${deletedClassrooms.deletedCount} classrooms were deleted successfully!`,
     });
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
@@ -313,7 +399,86 @@ const leaveClassroom = async (req, res) => {
     });
   }
 };
+const acceptJoinClassroom = async (req, res) => {
+  const { code } = req.query;
+  const { user_id } = req.user;
+  const { classroomId } = req.params;
+  try {
+    const rawSignature = `userId=${invitedUserId}&classroomId=${classroomId}`;
+    const inviteKey = crypto
+      .createHmac('sha256', SECRET_KEY)
+      .update(rawSignature)
+      .digest('hex');
+    const verifySignature = inviteKey === code;
+    if (!verifySignature) {
+      return res.status(HTTPStatus.OK).json({
+        message: 'The signature not valid',
+      });
+    }
 
+    const checkUserInClassroom = await Classroom.findById(classroomId);
+    if (checkUserInClassroom.ownerId === userId)
+      return res.status(HTTPStatus.OK).json({
+        message: 'You are owner in classroom!',
+      });
+    if (checkUserInClassroom.listUserJoined.includes(user_id)) {
+      return res.status(HTTPStatus.OK).json({
+        message: 'You have been in this classroom!',
+      });
+    }
+    await Classroom.findByIdAndUpdate(classroomId, {
+      $push: { listUserJoined: [user_id] },
+      $inc: { member: 1 },
+    });
+
+    return res
+      .status(HTTPStatus.OK)
+      .json({ message: 'Join in the Classroom successful.' });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message: error.message || 'Some error occurred while join in classroom.',
+    });
+  }
+};
+const inviteClassroom = async (req, res) => {
+  const { classroomId } = req.params;
+  const { user_id } = req.user;
+  const { email } = req.body;
+  try {
+    const checkUserExist = await User.findOne({ email });
+    if (!checkUserExist)
+      return res.status(HTTPStatus.BAD_REQUEST).json({
+        message: `This user has email ${email} not exist in system!`,
+      });
+    const classroom = await Classroom.findOne({
+      _id: classroomId,
+      ownerId: user_id,
+    });
+    if (!classroom)
+      return res.status(HTTPStatus.BAD_REQUEST).json({
+        message: ` Maybe classrom was not found or No permission!`,
+      });
+    const { id: invitedUserId } = checkUserExist;
+    const rawSignature = `userId=${invitedUserId}&classroomId=${classroomId}`;
+    const inviteKey = crypto
+      .createHmac('sha256', SECRET_KEY)
+      .update(rawSignature)
+      .digest('hex');
+    const link = `https://pnv-ces-classwork.herokuapp.com/api/classrooms/${classroomId}/joinClassroom?code=${inviteKey}`;
+    await Notification.create({
+      message: 'message',
+      link,
+      userId: invitedUserId,
+    });
+    return res.status(HTTPStatus.OK).json({
+      message: `Invite ${email} success. Waiting for them accept!`,
+    });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message: error.message || 'Some error occurred while invite member.',
+    });
+  }
+};
 export {
   create,
   update,
@@ -323,4 +488,6 @@ export {
   findOne,
   joinClassroom,
   leaveClassroom,
+  acceptJoinClassroom,
+  inviteClassroom,
 };
