@@ -1,23 +1,10 @@
 import mongoose from 'mongoose';
 const schema = mongoose.Schema(
   {
-    topic: {
-      type: String,
-      required: true,
-    },
-    owner: {
-      type: String,
-    },
-    list: [
-      {
-        question: {
-          type: String,
-        },
-        answer: {
-          type: String,
-        },
-      },
-    ],
+    question: { type: String, required: true },
+    answer: { type: String, required: true },
+    color: { type: String, default: 'gray' },
+    ownerId: { type: String, required: true },
   },
   { timestamps: true }
 );

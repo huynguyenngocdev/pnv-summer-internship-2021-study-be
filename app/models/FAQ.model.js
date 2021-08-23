@@ -1,17 +1,12 @@
 import mongoose from 'mongoose';
 const schema = mongoose.Schema(
   {
-    question: {
-      type: String,
-      required: true,
-    },
-    listAnswer: {
-      type: Array,
-    },
-    isSolve: {
-      type: Boolean,
-      default: false,
-    },
+    question: { type: String, required: true },
+    image: { type: String, default: null },
+    listAnswer: { type: Array, default: [] },
+    onwerId: { type: String, required: true },
+    ownerName: { type: String, required: true },
+    isSolve: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -22,4 +17,4 @@ schema.method('toJSON', function () {
   return object;
 });
 
-export default mongoose.model('FAQ', schema);
+export default mongoose.model('FAQs', schema);

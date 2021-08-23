@@ -7,7 +7,7 @@ const postSchema = mongoose.Schema(
     title: { type: String, required: true },
     content: { type: String, required: true },
     listComments: { type: Array, default: [] },
-    fileAttachment:{type:Array,default:[]}
+    fileAttachment: { type: Array, default: [] },
   },
   { timestamps: true }
 );
@@ -18,4 +18,4 @@ postSchema.method('toJSON', function () {
   return object;
 });
 
-export default mongoose.model('posts', postSchema);
+export default mongoose.model('materials', postSchema);
