@@ -22,6 +22,7 @@ const router = Router({ mergeParams: true });
  */
 
 router.post('/', [
+  auth,
   post.checkClassExist,
   upload.array('fileAttachment'),
   post.create,
@@ -89,7 +90,9 @@ router.get('/:postId', [
  * @apiSampleRequest off
  */
 
-router.put('/:postId', auth, upload.array('fileAttachment'), [
+router.put('/:postId', [
+  auth,
+  upload.array('fileAttachment'),
   post.checkClassExist,
   post.checkPostInclude,
   post.update,
@@ -105,7 +108,8 @@ router.put('/:postId', auth, upload.array('fileAttachment'), [
  * @apiSampleRequest off
  */
 
-router.delete('/:postId', auth, [
+router.delete('/:postId', [
+  auth,
   post.checkClassExist,
   post.checkPostInclude,
   post.deleteOne,

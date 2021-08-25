@@ -5,8 +5,8 @@ const Comment = db.comments;
 const ReplyComment = db.replycomments;
 const Post = db.posts;
 const Material = db.materials;
+const User = db.users;
 
-//create comments
 const create = async (req, res) => {
   const { content, message } = req.body;
   const { user_id } = req.user;
@@ -41,12 +41,19 @@ const findAll = async (req, res) => {
     let listComments;
     if (req.post) listComments = req.post.listComments;
     if (req.material) listComments = req.material.listComments;
-    const comment = await Comment.find({
+    const comments = await Comment.find({
       _id: {
         $in: listComments,
       },
     });
-    return res.status(HTTPStatus.OK).json(comment);
+    const dataComments = await Promise.all(
+      comments.map(async (element) => {
+        const { avatar: ownerAvatar } = await User.findById(element.ownerId);
+        element._doc.ownerAvatar = ownerAvatar;
+        return element;
+      })
+    );
+    return res.status(HTTPStatus.OK).json(dataComments);
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message:
@@ -60,10 +67,13 @@ const findOne = async (req, res) => {
   const { commentId } = req.params;
   try {
     const comment = await Comment.findById(commentId);
-    if (comment) return res.status(HTTPStatus.OK).json(comment);
-    return res
-      .status(HTTPStatus.NOT_FOUND)
-      .send({ message: `Not found comment with id= ${commentId}` });
+    if (!comment)
+      return res
+        .status(HTTPStatus.NOT_FOUND)
+        .send({ message: `Not found comment with id= ${commentId}` });
+    const { avatar: ownerAvatar } = await User.findById(comment.ownerId);
+    comment._doc.ownerAvatar = ownerAvatar;
+    return res.status(HTTPStatus.OK).json(comment);
   } catch (error) {
     return res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)

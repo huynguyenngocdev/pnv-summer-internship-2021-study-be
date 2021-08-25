@@ -10,4 +10,5 @@ export default {
   TOKEN_KEY: process.env.TOKEN_KEY,
   REFRESH_TOKEN: process.env.REFRESH_TOKEN,
   REDIRECT_URI: process.env.REDIRECT_URI,
+  SECRET_KEY: process.env.SECRET_KEY,
 };

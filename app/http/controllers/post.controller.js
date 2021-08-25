@@ -8,11 +8,12 @@ const Post = db.posts;
 const Classroom = db.classrooms;
 const Comment = db.comments;
 const User = db.users;
+const ReplyComment = db.replycomments;
 //create post
 const create = async (req, res) => {
   const { content, title } = req.body;
   const { user_id } = req.user;
-
+  const { listQuestions } = req.classroom;
   try {
     const user = await User.findById(user_id);
     const fileAttachmentUrl = req.files
@@ -27,7 +28,7 @@ const create = async (req, res) => {
     });
     if (post)
       await Classroom.findByIdAndUpdate(req.classroom.id, {
-        listQuestions: [...req.classroom.listQuestions, post.id],
+        listQuestions: [...listQuestions, post.id],
       });
 
     return res.status(HTTPStatus.OK).send(post);
@@ -56,7 +57,14 @@ const findAll = async (req, res) => {
       };
   try {
     const posts = await Post.find(condition);
-    return res.status(HTTPStatus.OK).json(posts);
+    const dataPosts = await Promise.all(
+      posts.map(async (element) => {
+        const { avatar: ownerAvatar } = await User.findById(element.ownerId);
+        element._doc.ownerAvatar = ownerAvatar;
+        return element;
+      })
+    );
+    return res.status(HTTPStatus.OK).json(dataPosts);
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message: error.message || 'Some error occurred while creating post',
@@ -69,10 +77,13 @@ const findOne = async (req, res) => {
   const { postId } = req.params;
   try {
     const post = await Post.findById(postId);
-    if (post) return res.send(post);
-    return res
-      .status(HTTPStatus.NOT_FOUND)
-      .send({ message: `Not found post with id ${postId}` });
+    if (!post)
+      return res
+        .status(HTTPStatus.NOT_FOUND)
+        .send({ message: `Not found post with id ${postId}` });
+    const { avatar: ownerAvatar } = await User.findById(post.ownerId);
+    post._doc.ownerAvatar = ownerAvatar;
+    return res.send(post);
   } catch {
     return res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -124,44 +135,42 @@ const update = async (req, res) => {
 };
 
 const deleteOne = async (req, res) => {
-  const { postId } = req.params;
+  const { classroomId, postId } = req.params;
   const { user_id } = req.user;
+  const { listQuestions } = req.classroom;
   try {
     const post = await Post.findOneAndRemove({
       _id: postId,
       ownerId: user_id,
     });
     if (!post) {
-      res.status(HTTPStatus.FORBIDDEN).send({
+      return res.status(HTTPStatus.FORBIDDEN).send({
         message: `Cannot delete post with id=${postId}. Maybe post was not found or no permission!`,
       });
     }
-    if (post) {
-      await Post.findByIdAndUpdate(req.post.id, {
-        listQuestions: [...req.classroom.listQuestions].filter(
-          (item) => item !== postId
-        ),
-      });
 
-      if (post.fileAttachment) {
-        for (const i in post.fileAttachment) {
-          post.fileAttachment[i] = post.fileAttachment[i].split('/')[5];
-        }
-        await deleteFileInDrive(post.fileAttachment);
+    await Classroom.findByIdAndUpdate(classroomId, {
+      listQuestions: [...listQuestions].filter((item) => item !== postId),
+    });
+
+    if (post.fileAttachment) {
+      for (const i in post.fileAttachment) {
+        post.fileAttachment[i] = post.fileAttachment[i].split('/')[5];
       }
-
-      const comments = await Comment.deleteMany({
-        _id: {
-          $in: post.listComments,
-        },
-      });
-
-      const replyComment = await ReplyComment.deleteMany({
-        _id: {
-          $in: comments.listReply,
-        },
-      });
+      await deleteFileInDrive(post.fileAttachment);
     }
+
+    const comments = await Comment.deleteMany({
+      _id: {
+        $in: post.listComments,
+      },
+    });
+    console.log(comments);
+    const replyComment = await ReplyComment.deleteMany({
+      _id: {
+        $in: comments.listReply,
+      },
+    });
     return res.send({
       message: 'post was deleted successfully!',
     });
@@ -177,7 +186,7 @@ const deleteAll = async (req, res) => {
   try {
     const data = await Post.find({
       _id: {
-        $in: listQuestionss,
+        $in: listQuestions,
       },
     });
 
@@ -194,7 +203,7 @@ const deleteAll = async (req, res) => {
 
     const posts = await Post.deleteMany({
       _id: {
-        $in: listQuestionss,
+        $in: listQuestions,
       },
     });
     return res.send({
@@ -210,7 +219,7 @@ const deleteAll = async (req, res) => {
 };
 const checkClassExist = async (req, res, next) => {
   const { classroomId } = req.params;
-  const user_id = req.user;
+  const { user_id } = req.user;
   try {
     const classroom = await Classroom.findOne({
       _id: classroomId,

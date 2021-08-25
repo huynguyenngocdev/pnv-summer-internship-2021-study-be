@@ -12,6 +12,7 @@ import myClassfolders from './myClassFolder.model.js';
 import replycomments from './replycomment.model.js';
 import classrooms from './classroom.model.js';
 import myclasses from './myclasses.model.js';
+import notifications from './notification.model.js';
 
 mongoose.Promise = global.Promise;
 
@@ -30,6 +31,7 @@ const db = {
   myClassfolders,
   materials,
   myclasses,
+  notifications,
 };
 
 export default db;

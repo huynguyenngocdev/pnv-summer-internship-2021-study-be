@@ -13,15 +13,38 @@ const router = Router();
  * @apiSampleRequest off
  */
 router.get('/joinClassroom', auth, classroom.joinClassroom);
+/**
+ * @api {post} /api/classrooms/:classroomId/invite invite someone to join  classroom
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiParam {String} email. email of user want to invite of the Classroom.
 
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/joinClassroom
+ * @apiSampleRequest off
+ */
+router.post('/:classroomId/invite', auth, classroom.inviteClassroom);
+/**
+ * @api {get} /api/classrooms/:classroomId/joinClassroom accept someone to join  classroom
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiParam {String} code. Code to join class
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/joinClassroom?code=sdsadssads
+ * @apiSampleRequest off
+ */
+router.get('/:classroomId/joinClassroom', auth, classroom.acceptJoinClassroom);
 /**
  * @api {get} /api/classrooms/:classroomId/leaveClassroom Leave in a classroom
  * @apiGroup Classrooms
  * @apiHeader {String} authorization Bearer token.
+ *
+
  * @apiExample Example usage:
  *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/leaveClassroom
  * @apiSampleRequest off
  */
+
 router.get('/:classroomId/leaveClassroom', auth, classroom.leaveClassroom);
 
 /**

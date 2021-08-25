@@ -8,6 +8,8 @@ const Material = db.materials;
 const Classroom = db.classrooms;
 const Comment = db.comments;
 const User = db.users;
+const ReplyComment = db.replycomments;
+
 //create material
 const create = async (req, res) => {
   const { content, title } = req.body;
@@ -56,8 +58,15 @@ const findAll = async (req, res) => {
         },
       };
   try {
-    const posts = await Material.find(condition);
-    return res.status(HTTPStatus.OK).json(posts);
+    const materials = await Material.find(condition);
+    const dataMaterials = await Promise.all(
+      materials.map(async (element) => {
+        const { avatar: ownerAvatar } = await User.findById(element.ownerId);
+        element._doc.ownerAvatar = ownerAvatar;
+        return element;
+      })
+    );
+    return res.status(HTTPStatus.OK).json(dataMaterials);
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message: error.message || 'Some error occurred while creating material',
@@ -70,10 +79,14 @@ const findOne = async (req, res) => {
   const { materialId } = req.params;
   try {
     const material = await Material.findById(materialId);
-    if (material) return res.send(material);
-    return res
-      .status(HTTPStatus.NOT_FOUND)
-      .send({ message: `Not found material with id ${materialId}` });
+
+    if (!material)
+      return res
+        .status(HTTPStatus.NOT_FOUND)
+        .send({ message: `Not found material with id ${materialId}` });
+    const { avatar: ownerAvatar } = await User.findById(material.ownerId);
+    material._doc.ownerAvatar = ownerAvatar;
+    return res.json(material);
   } catch {
     return res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -122,6 +135,7 @@ const update = async (req, res) => {
 
 const deleteOne = async (req, res) => {
   const { materialId } = req.params;
+  const { materials } = req.classroom;
   try {
     const material = await Material.findByIdAndRemove(materialId);
     if (!material) {
@@ -129,36 +143,29 @@ const deleteOne = async (req, res) => {
         message: `Cannot delete material with id=${materialId}. Maybe material was not found!`,
       });
     }
-    if (material) {
-      if (replyComment) {
-        await Material.findByIdAndUpdate(req.material.id, {
-          materials: [...req.classroom.materials].filter(
-            (item) => item !== materialId
-          ),
-        });
-        return res.send({
-          message: 'Comment was deleted successfully!',
-        });
-      }
-      if (material.fileAttachment) {
-        for (const i in material.fileAttachment) {
-          material.fileAttachment[i] = material.fileAttachment[i].split('/')[5];
-        }
-        await deleteFileInDrive(material.fileAttachment);
-      }
+    await Material.findByIdAndUpdate(materialId, {
+      materials: [...materials].filter((item) => item !== materialId),
+    });
 
-      const comments = await Comment.deleteMany({
-        _id: {
-          $in: material.listComments,
-        },
-      });
-
-      const replyComment = await ReplyComment.deleteMany({
-        _id: {
-          $in: comments.listReply,
-        },
-      });
+    if (material.fileAttachment) {
+      for (const i in material.fileAttachment) {
+        material.fileAttachment[i] = material.fileAttachment[i].split('/')[5];
+      }
+      await deleteFileInDrive(material.fileAttachment);
     }
+
+    const comments = await Comment.deleteMany({
+      _id: {
+        $in: material.listComments,
+      },
+    });
+
+    const replyComment = await ReplyComment.deleteMany({
+      _id: {
+        $in: comments.listReply,
+      },
+    });
+
     return res.send({
       message: 'material was deleted successfully!',
     });
@@ -170,8 +177,13 @@ const deleteOne = async (req, res) => {
 };
 
 const deleteAll = async (req, res) => {
+  const { materials } = req.classroom;
   try {
-    const data = await Material.find({});
+    const data = await Material.find({
+      _id: {
+        $in: materials,
+      },
+    });
 
     if (data) {
       data.forEach(async (ele) => {
@@ -183,11 +195,14 @@ const deleteAll = async (req, res) => {
         }
       });
     }
-
-    const posts = await Material.deleteMany({});
+    const material = await Material.deleteMany({
+      _id: {
+        $in: materials,
+      },
+    });
     return res.send({
-      posts,
-      message: `${posts.deletedCount} posts were deleted successfully!`,
+      material,
+      message: `${material.deletedCount} posts were deleted successfully!`,
     });
   } catch (error) {
     res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
