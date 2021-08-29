@@ -12,8 +12,10 @@ const {
   replycomments: ReplyComment,
   notifications: Notification,
 } = db;
+const baseUrl = 'https://pnv-ces-classwork.herokuapp.com';
 import config from '../../../config/config.js';
 const { SECRET_KEY } = config;
+
 //create comments
 const create = async (req, res) => {
   try {
@@ -43,14 +45,17 @@ const create = async (req, res) => {
 };
 
 const findAll = async (req, res) => {
-  const { topic } = req.query;
+  const { search } = req.query;
   const { user_id } = req.user;
   try {
-    const condition = topic
+    const condition = search
       ? {
-          topic: { $regex: new RegExp(title), $options: 'i' },
+          $or: [
+            { topic: { $regex: new RegExp(search), $options: 'i' } },
+            { className: { $regex: new RegExp(search), $options: 'i' } },
+          ],
           listUserJoined: {
-            $in: user_id,
+            $nin: user_id,
           },
         }
       : {
@@ -77,17 +82,6 @@ const findAll = async (req, res) => {
         materials: 0,
       }
     );
-
-    const dataClassOwn = await Promise.all(
-      listClassOwn.map(async (item) => {
-        const { _id: id, listUserJoined, ...props } = item._doc;
-        const userJoin = await User.find(
-          { _id: { $in: listUserJoined } },
-          { avatar: 1, name: 1, email: 1, _id: 0 }
-        );
-        return { ...props, id, ownerAvatar, userJoin };
-      })
-    );
     const dataClassJoin = await Promise.all(
       listClassJoin.map(async (item) => {
         const { _id: id, listUserJoined, ownerId, ...props } = item._doc;
@@ -97,6 +91,19 @@ const findAll = async (req, res) => {
         );
         const { avatar } = await User.findById(ownerId);
         return { ...props, id, ownerAvatar: avatar, userJoin };
+      })
+    );
+    if (search) {
+      return res.status(HTTPStatus.OK).json(dataClassJoin);
+    }
+    const dataClassOwn = await Promise.all(
+      listClassOwn.map(async (item) => {
+        const { _id: id, listUserJoined, ...props } = item._doc;
+        const userJoin = await User.find(
+          { _id: { $in: listUserJoined } },
+          { avatar: 1, name: 1, email: 1, _id: 0 }
+        );
+        return { ...props, id, ownerAvatar, userJoin };
       })
     );
 
@@ -404,7 +411,7 @@ const acceptJoinClassroom = async (req, res) => {
   const { user_id } = req.user;
   const { classroomId } = req.params;
   try {
-    const rawSignature = `userId=${invitedUserId}&classroomId=${classroomId}`;
+    const rawSignature = `userId=${user_id}&classroomId=${classroomId}`;
     const inviteKey = crypto
       .createHmac('sha256', SECRET_KEY)
       .update(rawSignature)
@@ -417,7 +424,7 @@ const acceptJoinClassroom = async (req, res) => {
     }
 
     const checkUserInClassroom = await Classroom.findById(classroomId);
-    if (checkUserInClassroom.ownerId === userId)
+    if (checkUserInClassroom.ownerId === user_id)
       return res.status(HTTPStatus.OK).json({
         message: 'You are owner in classroom!',
       });
@@ -442,9 +449,14 @@ const acceptJoinClassroom = async (req, res) => {
 };
 const inviteClassroom = async (req, res) => {
   const { classroomId } = req.params;
-  const { user_id } = req.user;
+  const { user_id, email: ownerEmail } = req.user;
   const { email } = req.body;
   try {
+    if (!email) {
+      return res
+        .status(HTTPStatus.BAD_REQUEST)
+        .json({ message: 'email is require' });
+    }
     const checkUserExist = await User.findOne({ email });
     if (!checkUserExist)
       return res.status(HTTPStatus.BAD_REQUEST).json({
@@ -455,7 +467,7 @@ const inviteClassroom = async (req, res) => {
       ownerId: user_id,
     });
     if (!classroom)
-      return res.status(HTTPStatus.BAD_REQUEST).json({
+      return res.status(HTTPStatus.FORBIDDEN).json({
         message: ` Maybe classrom was not found or No permission!`,
       });
     const { id: invitedUserId } = checkUserExist;
@@ -464,9 +476,9 @@ const inviteClassroom = async (req, res) => {
       .createHmac('sha256', SECRET_KEY)
       .update(rawSignature)
       .digest('hex');
-    const link = `https://pnv-ces-classwork.herokuapp.com/api/classrooms/${classroomId}/joinClassroom?code=${inviteKey}`;
+    const link = `${baseUrl}/api/classrooms/${classroomId}/joinClassroom?code=${inviteKey}`;
     await Notification.create({
-      message: 'message',
+      message: `${ownerEmail}message want to you join class`,
       link,
       userId: invitedUserId,
     });
@@ -476,6 +488,149 @@ const inviteClassroom = async (req, res) => {
   } catch (error) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
       message: error.message || 'Some error occurred while invite member.',
+    });
+  }
+};
+const removeMember = async (req, res) => {
+  const { classroomId } = req.params;
+  const { user_id, email: ownerEmail } = req.user;
+  const { email } = req.body;
+  try {
+    if (!email)
+      return res.status(HTTPStatus.BAD_REQUEST).send({
+        message: 'email  can not be empty!',
+      });
+    const classroom = await Classroom.findOne({
+      _id: classroomId,
+      ownerId: user_id,
+    });
+    if (!classroom)
+      return res.status(HTTPStatus.FORBIDDEN).json({
+        message: ` Maybe classrom was not found or No permission!`,
+      });
+    const checkUserRemove = await User.findOne({ email });
+    const { id: requestRemovedUserId } = checkUserRemove;
+    if (requestRemovedUserId === user_id)
+      return res.json({
+        message:
+          'You are onwner! Cannot remove your self. Please choose delete class if you want',
+      });
+    if (!checkUserRemove)
+      return res.status(HTTPStatus.OK).json({
+        message: `This user has email ${email} not exist in system!`,
+      });
+    const { listUserJoined } = classroom;
+    if (!listUserJoined.includes(checkUserRemove.id))
+      return res.status(HTTPStatus.BAD_REQUEST).json({
+        message: `This user has email ${email} not  in this classroom! Check email is correct`,
+      });
+    await Classroom.findByIdAndUpdate(classroomId, {
+      listUserJoined: [...listUserJoined].filter(
+        (item) => item !== checkUserRemove.id
+      ),
+    });
+    return res.json({ message: 'Success' });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message:
+        error.message ||
+        `Some error occurred while remove  user has ${email} in  classrooms.`,
+    });
+  }
+};
+const requestTojoinClassroom = async (req, res) => {
+  const { classroomId } = req.params;
+  const { user_id, email } = req.user;
+  try {
+    const classroom = await Classroom.findById(classroomId);
+    const { listUserJoined = [], ownerId = '', className } = classroom;
+    if (listUserJoined.includes(user_id) || user_id === ownerId) {
+      return res.status(HTTPStatus.OK).json({
+        message: `You already been in this classroom`,
+      });
+    }
+    const rawSignature = `userId=${ownerId}&classroomId=${classroomId}&join=approve&email=${email}`;
+    const inviteKey = crypto
+      .createHmac('sha256', SECRET_KEY)
+      .update(rawSignature)
+      .digest('hex');
+    const link = `${baseUrl}/api/classrooms/${classroomId}/approveMember?code=${inviteKey}&email=${email}`;
+    const oldNotification = await Notification.findOne({ link: link });
+    if (oldNotification) return res.json({ message: 'Watiing for accept' });
+    await Notification.create({
+      message: ` User ${email} want to you approve to join ${className}`,
+      link,
+      userId: ownerId,
+    });
+
+    return res.json({ message: 'request successful' });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message:
+        error.message ||
+        `Some error occurred while request to join  classroom ${classroomId} `,
+    });
+  }
+};
+const approveMember = async (req, res) => {
+  const { user_id } = req.user;
+  const { classroomId } = req.params;
+  const { code, email } = req.query;
+  if (!code)
+    return res
+      .status(HTTPStatus.BAD_GATEWAY)
+      .json({ message: 'Code not empty' });
+  try {
+    const rawSignature = `userId=${user_id}&classroomId=${classroomId}&join=approve&email=${email}`;
+    const userRequest = await User.findOne({ email });
+    if (!userRequest) {
+      return res.status(HTTPStatus.NOT_FOUND).json({
+        message: `This email: ${email} not exists in our system!`,
+      });
+    }
+    const { id: userJointId } = userRequest;
+    const inviteKey = crypto
+      .createHmac('sha256', SECRET_KEY)
+      .update(rawSignature)
+      .digest('hex');
+    const verifySignature = inviteKey === code;
+    if (!verifySignature) {
+      return res.status(HTTPStatus.OK).json({
+        message: 'The signature not valid',
+      });
+    }
+    const checkUserInClassroom = await Classroom.findById(classroomId);
+    if (!checkUserInClassroom)
+      return res
+        .status(HTTPStatus.NOT_FOUND)
+        .json({ message: 'Classroom Not Found' });
+    const { listUserJoined, ownerId } = checkUserInClassroom;
+    if (user_id !== ownerId) {
+      return res.status(HTTPStatus.FORBIDDEN).json({
+        message: 'No permission!',
+      });
+    }
+    if (userJointId === ownerId) {
+      return res.status(HTTPStatus.FORBIDDEN).json({
+        message: 'You are owner in classroom',
+      });
+    }
+    if (listUserJoined.includes(userJointId)) {
+      return res.status(HTTPStatus.OK).json({
+        message: 'You have been in this classroom!',
+      });
+    }
+    await Classroom.findByIdAndUpdate(classroomId, {
+      $push: { listUserJoined: [userJointId] },
+      $inc: { member: 1 },
+    });
+
+    return res.status(HTTPStatus.OK).json({ message: 'Successful' });
+  } catch (error) {
+    return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).send({
+      message:
+        error.message ||
+        `Some error occurred while approve member join in classroom.`,
     });
   }
 };
@@ -490,4 +645,7 @@ export {
   leaveClassroom,
   acceptJoinClassroom,
   inviteClassroom,
+  removeMember,
+  requestTojoinClassroom,
+  approveMember,
 };

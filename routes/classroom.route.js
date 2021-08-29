@@ -46,6 +46,41 @@ router.get('/:classroomId/joinClassroom', auth, classroom.acceptJoinClassroom);
  */
 
 router.get('/:classroomId/leaveClassroom', auth, classroom.leaveClassroom);
+/**
+ * @api {get} /api/classrooms/:classroomId/removeMember member remove member out in your classroom
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiParam {String} email of user in classroom
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/removeMember
+ * @apiSampleRequest off
+ */
+
+router.post('/:classroomId/removeMember', auth, classroom.removeMember);
+
+/**
+ * @api {post} /api/classrooms/:classroomId/approveMember to approve member join  your classroom
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiParams {String} code to to verify
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/approveMember
+ * @apiSampleRequest off
+ */
+
+router.get('/:classroomId/approveMember', auth, classroom.approveMember);
+
+/**
+ * @api {post} /api/classrooms/:classroomId/request to join class
+ * @apiGroup Classrooms
+ * @apiHeader {String} authorization Bearer token.
+ * @apiParams {String} code to to verify
+ * @apiExample Example usage:
+ *    https://pnv-ces-classwork.herokuapp.com/api/classrooms/jhgf7634t153ery7sdfjgbb/approveMember
+ * @apiSampleRequest off
+ */
+
+router.get('/:classroomId/request', auth, classroom.requestTojoinClassroom);
 
 /**
  * @api {post} /api/classrooms Create a new classroom
