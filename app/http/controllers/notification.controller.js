@@ -13,13 +13,13 @@ const findAll = async (req, res) => {
       { userId: 0 }
     )
       .limit(10)
-      .sort({ date: 'desc' });
+      .sort({ createdAt: 'descending' });
     const oldMessage = await Notification.find(
       { user: user_id, isRead: true },
       { userId: 0 }
     )
       .limit(30)
-      .sort({ date: 'desc' });
+      .sort({ createdAt: 'descending' });
 
     return res.status(HTTPStatus.OK).json({ newMessage, oldMessage });
   } catch (error) {

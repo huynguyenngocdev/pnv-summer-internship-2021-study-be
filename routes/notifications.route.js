@@ -12,6 +12,6 @@ const router = Router();
  *    https://pnv-ces-classwork.herokuapp.com/api/notifications
  * @apiSampleRequest off
  */
-router.get('/notifications', auth, notification.findAll);
+router.get('/', auth, notification.findAll);
 
 export default router;
